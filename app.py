@@ -86,7 +86,7 @@ WATCH_FILE = "watch_list.csv"
 # ─────────────────────────────────────────
 @st.cache_data(ttl=300)
 def get_rate():
-    try:
+    try:
         return float(requests.get("https://open.er-api.com/v6/latest/USD", timeout=3).json()["rates"]["JPY"])
     except:
         return 155.0
