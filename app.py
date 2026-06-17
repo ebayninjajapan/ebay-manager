@@ -102,35 +102,35 @@ def get_rate():
                             df["ID"] = df["ID"].astype(int)
 return df
 return pd.DataFrame(columns=[
-        "ID", "日付", "担当者", "商品名", "仕入(円)",
-        "eBay相場(ドル)", "売値(ドル)", "ステータス",
-        "発送サイズ", "確定レート", "メモ"
-    ])
+"ID", "日付", "担当者", "商品名", "仕入(円)",
+"eBay相場(ドル)", "売値(ドル)", "ステータス",
+"発送サイズ", "確定レート", "メモ"
+])
 
 def load_watch_list():
-    if os.path.exists(WATCH_FILE):
-        try:
-            w = pd.read_csv(WATCH_FILE)
-            # 列名の重複防止・リネーム処理
-            if "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" not in w.columns:
-                w = w.rename(columns={"eBay最安値(ドル)": "eBay相場(ドル)"})
-            elif "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" in w.columns:
-                w = w.drop(columns=["eBay最安値(ドル)"])
-                
-            # 必要な列が確実に1つずつ存在するように調整
-            for col in ["狙う仕入れ価格", "前回最安値", "eBay相場(ドル)"]:
-                if col not in w.columns:
-                    w[col] = 0.0
-                w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
-            if "状態" not in w.columns:
-                w["状態"] = "🆕 未チェック"
-            
-            # 重複列を完全に排除して必要な列のみを抽出
-            w = w.loc[:, ~w.columns.duplicated()]
-            return w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]]
-        except:
-            pass
-    return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"])
+if os.path.exists(WATCH_FILE):
+try:
+w = pd.read_csv(WATCH_FILE)
+# 列名の重複防止・リネーム処理
+if "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" not in w.columns:
+w = w.rename(columns={"eBay最安値(ドル)": "eBay相場(ドル)"})
+elif "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" in w.columns:
+w = w.drop(columns=["eBay最安値(ドル)"])
+
+# 必要な列が確実に1つずつ存在するように調整
+for col in ["狙う仕入れ価格", "前回最安値", "eBay相場(ドル)"]:
+if col not in w.columns:
+w[col] = 0.0
+w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
+if "状態" not in w.columns:
+w["状態"] = "🆕 未チェック"
+
+# 重複列を完全に排除して必要な列のみを抽出
+w = w.loc[:, ~w.columns.duplicated()]
+return w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]]
+except:
+pass
+return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"])
 
 
 def check_yahoo_auctions_html(keyword):
