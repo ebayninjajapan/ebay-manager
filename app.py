@@ -77,6 +77,11 @@ USER_OPTIONS = ["自分", "悠太郎", "その他"]
 # ─────────────────────────────────────────
 df = load_data()
 df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
+
+# 「確定レート」列が空だったり存在しない場合を考慮した安全な書き方
+if "確定レート" not in df.columns:
+    df["確定レート"] = 0.0
+
 df["使用レート"] = df["確定レート"].replace(0, current_rate)
 
 # 純利益の計算
