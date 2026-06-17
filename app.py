@@ -57,13 +57,32 @@ df = load_data()
 tab1, tab2 = st.tabs(["📋 在庫管理表", "その他"])
 
 with tab1:
-    edited_df = st.data_editor(df, num_rows="dynamic")
-    if st.button("💾 保存"):
+    st.subheader("📋 在庫管理表")
+    # 検索・絞り込みエリア
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1: filter_status = st.selectbox("ステータス絞り込み", ["すべて"] + STATUS_OPTIONS)
+    with col_f2: filter_user = st.selectbox("担当者絞り込み", ["すべて"] + USER_OPTIONS)
+    with col_f3: search_word = st.text_input("商品名で検索")
+
+    # フィルター適用ロジック
+    df_show = df.copy()
+    if filter_status != "すべて": df_show = df_show[df_show["ステータス"] == filter_status]
+    if filter_user != "すべて": df_show = df_show[df_show["担当者"] == filter_user]
+    if search_word: df_show = df_show[df_show["商品名"].str.contains(search_word, na=False)]
+
+    # エディタ表示
+    edited_df = st.data_editor(df_show, num_rows="dynamic", key="main_editor")
+    
+    if st.button("💾 変更を保存", type="primary"):
+        # 必要に応じて元のdfにマージする処理などを含める
         edited_df.to_csv(DB_FILE, index=False)
-        st.success("保存完了")
+        st.success("保存しました！")
         st.rerun()
 
-st.write("システム稼働中")
+# データのダウンロード機能（Tab4用）
+with tab4:
+    st.subheader("💾 データダウンロード")
+    st.download_button("CSVをダウンロード", df.to_csv(index=False).encode('utf-8-sig'), "data.csv", "text/csv")
 
 # 監視機能の関数を追記
 def load_watch_list():
