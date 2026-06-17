@@ -88,16 +88,15 @@ WATCH_FILE = "watch_list.csv"
 def get_rate():
     try:
         return float(requests.get("https://open.er-api.com/v6/latest/USD", timeout=3).json()["rates"]["JPY"])
-    except:
-        return 155.0
-
-def load_data():
-    if os.path.exists(DB_FILE):
-        df = pd.read_csv(DB_FILE)
-        for col in ["ID", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "確定レート"]:
-            if col not in df.columns:
-                df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+        except:
+            return 155.0
+            def load_data():
+                if os.path.exists(DB_FILE)
+                df = pd.read_csv(DB_FILE)
+                for col in ["ID", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "確定レート"]:
+                    if col not in df.columns:
+                        df[col] = 0.0
+                        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
         if "メモ" not in df.columns:
             df["メモ"] = ""
         df["ID"] = df["ID"].astype(int)
