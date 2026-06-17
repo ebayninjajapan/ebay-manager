@@ -235,74 +235,73 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 # TAB 1
 with tab1:
-    st.subheader("📋 在庫管理表")
-    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
-    with col_f1:
-        filter_status = st.selectbox("ステータスで絞り込み", ["すべて"] + STATUS_OPTIONS)
-    with col_f2:
-        filter_user = st.selectbox("担当者で絞り込み", ["すべて"] + USER_OPTIONS)
-    with col_f3:
-        search_word = st.text_input("商品名で検索")
+st.subheader("📋 在庫管理表")
+col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
+with col_f1:
+filter_status = st.selectbox("ステータスで絞り込み", ["すべて"] + STATUS_OPTIONS)
+with col_f2:
+filter_user = st.selectbox("担当者で絞り込み", ["すべて"] + USER_OPTIONS)
+with col_f3:
+search_word = st.text_input("商品名で検索")
+df_show = df.copy()
+if filter_status != "すべて":
+df_show = df_show[df_show["ステータス"] == filter_status]
+if filter_user != "すべて":
+df_show = df_show[df_show["担当者"] == filter_user]
+if search_word:
+df_show = df_show[df_show["商品名"].str.contains(search_word, na=False)]
 
-    df_show = df.copy()
-    if filter_status != "すべて":
-        df_show = df_show[df_show["ステータス"] == filter_status]
-    if filter_user != "すべて":
-        df_show = df_show[df_show["担当者"] == filter_user]
-    if search_word:
-        df_show = df_show[df_show["商品名"].str.contains(search_word, na=False)]
+if not df_show.empty and "日付" in df_show.columns:
+df_show["日付"] = df_show["日付"].dt.strftime("%Y-%m-%d")
 
-    if not df_show.empty and "日付" in df_show.columns:
-        df_show["日付"] = df_show["日付"].dt.strftime("%Y-%m-%d")
+df_show.insert(0, "削除", False)
+base_columns = ["ID", "日付", "担当者", "商品名", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "ステータス", "発送サイズ", "確定レート", "メモ"]
 
-    df_show.insert(0, "削除", False)
-    base_columns = ["ID", "日付", "担当者", "商品名", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "ステータス", "発送サイズ", "確定レート", "メモ"]
+edited_df = st.data_editor(
+df_show,
+column_config={
+"削除": st.column_config.CheckboxColumn("削除", width="small"),
+"ID": st.column_config.NumberColumn("ID", disabled=True, format="%d"),
+"ステータス": st.column_config.SelectboxColumn(options=STATUS_OPTIONS, required=True),
+"発送サイズ": st.column_config.SelectboxColumn(options=SIZE_OPTIONS),
+"担当者": st.column_config.SelectboxColumn(options=USER_OPTIONS),
+},
+width="stretch", hide_index=True, num_rows="dynamic", key="main_editor"
+)
 
-    edited_df = st.data_editor(
-        df_show,
-        column_config={
-            "削除": st.column_config.CheckboxColumn("削除", width="small"),
-            "ID": st.column_config.NumberColumn("ID", disabled=True, format="%d"),
-            "ステータス": st.column_config.SelectboxColumn(options=STATUS_OPTIONS, required=True),
-            "発送サイズ": st.column_config.SelectboxColumn(options=SIZE_OPTIONS),
-            "担当者": st.column_config.SelectboxColumn(options=USER_OPTIONS),
-        },
-        width="stretch", hide_index=True, num_rows="dynamic", key="main_editor"
-    )
+if st.button("💾 変更を保存", type="primary"):
+saved_edited = edited_df[edited_df["削除"] == False].copy()
+new_rows_list = []
+updated_ids = set()
 
-    if st.button("💾 変更を保存", type="primary"):
-        saved_edited = edited_df[edited_df["削除"] == False].copy()
-        new_rows_list = []
-        updated_ids = set()
+for _, row in saved_edited.iterrows():
+pid = row.get("ID", 0)
+if pd.isna(pid) or pid == 0 or int(pid) not in df["ID"].values:
+next_id = int(df["ID"].max() + 1) if not df.empty else 1
+while next_id in updated_ids: next_id += 1
+row["ID"] = next_id
+row["日付"] = datetime.now().strftime("%Y-%m-%d") if pd.isna(row.get("日付")) else row["日付"]
+new_dict = {col: row.get(col, "") for col in base_columns}
+if new_dict["ステータス"] in ["販売済み", "発送済"] and (pd.isna(new_dict["確定レート"]) or new_dict["確定レート"] == 0):
+new_dict["確定レート"] = current_rate
+new_rows_list.append(new_dict)
+updated_ids.add(next_id)
+else:
+pid = int(pid)
+updated_ids.add(pid)
+if row["ステータス"] in ["販売済み", "発送済"] and row["確定レート"] == 0:
+row["確定レート"] = current_rate
+for col in base_columns:
+if col in row: df.loc[df["ID"] == pid, col] = row[col]
 
-        for _, row in saved_edited.iterrows():
-            pid = row.get("ID", 0)
-            if pd.isna(pid) or pid == 0 or int(pid) not in df["ID"].values:
-                next_id = int(df["ID"].max() + 1) if not df.empty else 1
-                while next_id in updated_ids: next_id += 1
-                row["ID"] = next_id
-                row["日付"] = datetime.now().strftime("%Y-%m-%d") if pd.isna(row.get("日付")) else row["日付"]
-                new_dict = {col: row.get(col, "") for col in base_columns}
-                if new_dict["ステータス"] in ["販売済み", "発送済"] and (pd.isna(new_dict["確定レート"]) or new_dict["確定レート"] == 0):
-                    new_dict["確定レート"] = current_rate
-                new_rows_list.append(new_dict)
-                updated_ids.add(next_id)
-            else:
-                pid = int(pid)
-                updated_ids.add(pid)
-                if row["ステータス"] in ["販売済み", "発送済"] and row["確定レート"] == 0:
-                    row["確定レート"] = current_rate
-                for col in base_columns:
-                    if col in row: df.loc[df["ID"] == pid, col] = row[col]
+visible_ids = set(df_show["ID"].dropna().astype(int).values)
+deleted_ids = visible_ids - updated_ids
+if deleted_ids: df = df[~df["ID"].isin(deleted_ids)]
+if new_rows_list: df = pd.concat([df, pd.DataFrame(new_rows_list)], ignore_index=True)
 
-        visible_ids = set(df_show["ID"].dropna().astype(int).values)
-        deleted_ids = visible_ids - updated_ids
-        if deleted_ids: df = df[~df["ID"].isin(deleted_ids)]
-        if new_rows_list: df = pd.concat([df, pd.DataFrame(new_rows_list)], ignore_index=True)
-
-        df[base_columns].to_csv(DB_FILE, index=False)
-        st.success("✅ 変更を保存しました！")
-        st.rerun()
+df[base_columns].to_csv(DB_FILE, index=False)
+st.success("✅ 変更を保存しました！")
+st.rerun()
 
 # TAB 2
 with tab2:
