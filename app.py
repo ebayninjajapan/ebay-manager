@@ -506,9 +506,9 @@ updated_rows = []
 for idx, row in st.session_state.w_df.iterrows():
 kw = row["商品名"]
 target = row["狙う仕入れ価格"]
-                        
+
 current_lowest = check_yahoo_auctions_html(kw)
-                        
+
 if current_lowest is not None and current_lowest >= 100:
 row["前回最安値"] = int(current_lowest)
 if target > 0 and current_lowest <= target: 
@@ -518,10 +518,10 @@ row["状態"] = "👀 巡回済"
 else:
 row["前回最安値"] = 0
 row["状態"] = "❌ 出品なし"
-                        
+
 updated_rows.append(row)
 time.sleep(1.2)
-                        
+
 new_df = pd.DataFrame(updated_rows)
 new_df.to_csv(WATCH_FILE, index=False)
 st.session_state.w_df = new_df
