@@ -457,7 +457,7 @@ with st.form("add_form", clear_on_submit=True):
 name = st.text_input("商品名 *")
 user = st.selectbox("担当者 *", USER_OPTIONS)
 cost = st.number_input("仕入合計（円）", min_value=0, step=100)
-size   = st.selectbox("発送サイズ", SIZE_OPTIONS)
+size = st.selectbox("発送サイズ", SIZE_OPTIONS)
 status = st.selectbox("初期ステータス", STATUS_OPTIONS)
 submitted = st.form_submit_button("✅ 登録する")
 if submitted and name.strip():
