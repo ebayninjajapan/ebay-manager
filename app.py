@@ -609,7 +609,7 @@ st.markdown(f"""
 🎯 狙い価格での利益: <strong style='color:{color_tgt};'>{profit_text_tgt}</strong>
 </span>
 """, unsafe_allow_html=True)
-                
+
 with col_m:
 st.markdown(f'<a href="{mercari_url}" target="_blank" style="display:block; text-align:center; background:#e32b2b; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🔴 メルカリ ↗</a>', unsafe_allow_html=True)
 with col_y:
