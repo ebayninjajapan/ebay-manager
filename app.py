@@ -212,7 +212,7 @@ this_month = df[df["日付"].dt.month == now_month]
 sold = this_month[this_month["ステータス"].isin(["販売済み", "発送済"])]
 
 if "w_df" not in st.session_state:
-    st.session_state.w_df = load_watch_list()
+st.session_state.w_df = load_watch_list()
 
 # ─────────────────────────────────────────
 # ダッシュボード
