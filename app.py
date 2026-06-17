@@ -511,9 +511,9 @@ current_lowest = check_yahoo_auctions_html(kw)
 
 if current_lowest is not None and current_lowest >= 100:
 row["前回最安値"] = int(current_lowest)
-if target > 0 and current_lowest <= target: 
+if target > 0 and current_lowest <= target:
 row["状態"] = "🔥 買い時アリ！"
-else: 
+else:
 row["状態"] = "👀 巡回済"
 else:
 row["前回最安値"] = 0
