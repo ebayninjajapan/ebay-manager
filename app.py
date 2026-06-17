@@ -447,180 +447,178 @@ input,select{width:100%;padding:10px 11px;border:1px solid var(--iborder);border
 })();
 </script>
 </body></html>"""
-    html_calc = html_calc_template.replace("__CURRENT_RATE__", f"{current_rate:.2f}")
-    st.html(html_calc)
+html_calc = html_calc_template.replace("__CURRENT_RATE__", f"{current_rate:.2f}")
+st.html(html_calc)
 
 # TAB 3
 with tab3:
-    st.subheader("📥 新規仕入れ登録")
-    with st.form("add_form", clear_on_submit=True):
-        name   = st.text_input("商品名 *")
-        user   = st.selectbox("担当者 *", USER_OPTIONS)
-        cost   = st.number_input("仕入合計（円）", min_value=0, step=100)
-        size   = st.selectbox("発送サイズ", SIZE_OPTIONS)
-        status = st.selectbox("初期ステータス", STATUS_OPTIONS)
-        submitted = st.form_submit_button("✅ 登録する")
-        if submitted and name.strip():
-            next_id = int(df["ID"].max() + 1) if not df.empty else 1
-            new_row = pd.DataFrame([{
-                "ID": next_id, "日付": datetime.now().strftime("%Y-%m-%d"), "担当者": user,
-                "商品名": name.strip(), "仕入(円)": cost, "eBay相場(ドル)": 0, "売値(ドル)": 0,
-                "発送サイズ": size, "ステータス": status, "確定レート": 0, "メモ": ""
-            }])
-            pd.concat([df[base_columns], new_row], ignore_index=True).to_csv(DB_FILE, index=False)
-            st.success("登録しました！")
-            st.rerun()
+st.subheader("📥 新規仕入れ登録")
+with st.form("add_form", clear_on_submit=True):
+name   = st.text_input("商品名 *")
+user   = st.selectbox("担当者 *", USER_OPTIONS)
+cost   = st.number_input("仕入合計（円）", min_value=0, step=100)
+size   = st.selectbox("発送サイズ", SIZE_OPTIONS)
+status = st.selectbox("初期ステータス", STATUS_OPTIONS)
+submitted = st.form_submit_button("✅ 登録する")
+if submitted and name.strip():
+next_id = int(df["ID"].max() + 1) if not df.empty else 1
+new_row = pd.DataFrame([{
+"ID": next_id, "日付": datetime.now().strftime("%Y-%m-%d"), "担当者": user,
+"商品名": name.strip(), "仕入(円)": cost, "eBay相場(ドル)": 0, "売値(ドル)": 0,
+"発送サイズ": size, "ステータス": status, "確定レート": 0, "メモ": ""
+}])
+pd.concat([df[base_columns], new_row], ignore_index=True).to_csv(DB_FILE, index=False)
+st.success("登録しました！")
+st.rerun()
 
 # TAB 4
 with tab4:
-    st.subheader("💾 データダウンロード")
-    st.download_button(
-        label="📥 管理データをCSVでダウンロード",
-        data=df.to_csv(index=False, encoding="utf-8-sig"),
-        file_name="ebay_data.csv", mime="text/csv", width="stretch"
-    )
+st.subheader("💾 データダウンロード")
+st.download_button(
+label="📥 管理データをCSVでダウンロード",
+data=df.to_csv(index=False, encoding="utf-8-sig"),
+file_name="ebay_data.csv", mime="text/csv", width="stretch"
+)
 
 # TAB 5
 with tab5:
-    st.subheader("🔥 国内仕入れ元・自動新着監視")
-    with st.expander("➕ 新しい仕入れ候補・キーワードを登録する", expanded=False):
-        with st.form("add_watch_form", clear_on_submit=True):
-            w_name = st.text_input("仕入れたい商品名・キーワード（例：Nikon F3 本体）")
-            w_target_price = st.number_input("狙う仕入れ上限価格（円）", min_value=0, step=1000)
-            w_submitted = st.form_submit_button("➕ 監視リストに追加")
-            if w_submitted and w_name.strip():
-                new_w_row = pd.DataFrame([{
-                    "商品名": w_name.strip(), "狙う仕入れ価格": w_target_price, "前回最安値": 0.0, "eBay相場(ドル)": 0.0, "状態": "🆕 未チェック"
-                }])
-                st.session_state.w_df = pd.concat([st.session_state.w_df, new_w_row], ignore_index=True)
-                st.session_state.w_df.to_csv(WATCH_FILE, index=False)
-                st.success(f"「{w_name}」を監視リストに登録しました！")
-                st.rerun()
+st.subheader("🔥 国内仕入れ元・自動新着監視")
+with st.expander("➕ 新しい仕入れ候補・キーワードを登録する", expanded=False):
+with st.form("add_watch_form", clear_on_submit=True):
+w_name = st.text_input("仕入れたい商品名・キーワード（例：Nikon F3 本体）")
+w_target_price = st.number_input("狙う仕入れ上限価格（円）", min_value=0, step=1000)
+w_submitted = st.form_submit_button("➕ 監視リストに追加")
+if w_submitted and w_name.strip():
+new_w_row = pd.DataFrame([{
+"商品名": w_name.strip(), "狙う仕入れ価格": w_target_price, "前回最安値": 0.0, "eBay相場(ドル)": 0.0, "状態": "🆕 未チェック"
+}])
+st.session_state.w_df = pd.concat([st.session_state.w_df, new_w_row], ignore_index=True)
+st.session_state.w_df.to_csv(WATCH_FILE, index=False)
+st.success(f"「{w_name}」を監視リストに登録しました！")
+st.rerun()
 
-    if not st.session_state.w_df.empty:
-        col_btn1, col_btn2 = st.columns([3, 2])
-        with col_btn1:
-            if st.button("🔄 登録キーワードを今すぐ自動巡回（ヤフオク最安値取得）", type="primary", width="stretch"):
-                with st.spinner("ヤフオクの新着データを自動チェック中..."):
-                    updated_rows = []
-                    for idx, row in st.session_state.w_df.iterrows():
-                        kw = row["商品名"]
-                        target = row["狙う仕入れ価格"]
+if not st.session_state.w_df.empty:
+col_btn1, col_btn2 = st.columns([3, 2])
+with col_btn1:
+if st.button("🔄 登録キーワードを今すぐ自動巡回（ヤフオク最安値取得）", type="primary", width="stretch"):
+with st.spinner("ヤフオクの新着データを自動チェック中..."):
+updated_rows = []
+for idx, row in st.session_state.w_df.iterrows():
+kw = row["商品名"]
+target = row["狙う仕入れ価格"]
                         
-                        current_lowest = check_yahoo_auctions_html(kw)
+current_lowest = check_yahoo_auctions_html(kw)
                         
-                        if current_lowest is not None and current_lowest >= 100:
-                            row["前回最安値"] = int(current_lowest)
-                            if target > 0 and current_lowest <= target: 
-                                row["状態"] = "🔥 買い時アリ！"
-                            else: 
-                                row["状態"] = "👀 巡回済"
-                        else:
-                            row["前回最安値"] = 0
-                            row["状態"] = "❌ 出品なし"
+if current_lowest is not None and current_lowest >= 100:
+row["前回最安値"] = int(current_lowest)
+if target > 0 and current_lowest <= target: 
+row["状態"] = "🔥 買い時アリ！"
+else: 
+row["状態"] = "👀 巡回済"
+else:
+row["前回最安値"] = 0
+row["状態"] = "❌ 出品なし"
                         
-                        updated_rows.append(row)
-                        time.sleep(1.2)
+updated_rows.append(row)
+time.sleep(1.2)
                         
-                    new_df = pd.DataFrame(updated_rows)
-                    new_df.to_csv(WATCH_FILE, index=False)
-                    st.session_state.w_df = new_df
-                    st.toast("ヤフオクの自動巡回が完了しました！", icon="🚀")
-                    st.rerun()
+new_df = pd.DataFrame(updated_rows)
+new_df.to_csv(WATCH_FILE, index=False)
+st.session_state.w_df = new_df
+st.toast("ヤフオクの自動巡回が完了しました！", icon="🚀")
+st.rerun()
 
-        st.markdown("### 📋 登録中の一覧（ヤフオク巡回に加え、eBayドル相場を手動入力できます）")
-        w_df_show = st.session_state.w_df.copy()
-        w_df_show.insert(0, "削除", False)
-        state_options = ["🆕 未チェック", "👀 巡回済", "🔥 買い時アリ！", "❌ 出品なし", "📦 仕入れ完了"]
+st.markdown("### 📋 登録中の一覧（ヤフオク巡回に加え、eBayドル相場を手動入力できます）")
+w_df_show = st.session_state.w_df.copy()
+w_df_show.insert(0, "削除", False)
+state_options = ["🆕 未チェック", "👀 巡回済", "🔥 買い時アリ！", "❌ 出品なし", "📦 仕入れ完了"]
+edited_w_df = st.data_editor(
+w_df_show,
+column_config={
+"削除": st.column_config.CheckboxColumn("削除", width="small"),
+"商品名": st.column_config.TextColumn("商品名", required=True),
+"狙う仕入れ価格": st.column_config.NumberColumn("狙う価格(円)", format="¥%d"),
+"前回最安値": st.column_config.NumberColumn("ヤフオク最安(円)", format="¥%d", disabled=True),
+"eBay相場(ドル)": st.column_config.NumberColumn("eBay相場(ドル入力)", format="$%.2f", min_value=0.0, step=10.0),
+"状態": st.column_config.SelectboxColumn("ステータス", options=state_options),
+},
+width="stretch", hide_index=True, key="watch_editor"
+)
 
-        edited_w_df = st.data_editor(
-            w_df_show,
-            column_config={
-                "削除": st.column_config.CheckboxColumn("削除", width="small"),
-                "商品名": st.column_config.TextColumn("商品名", required=True),
-                "狙う仕入れ価格": st.column_config.NumberColumn("狙う価格(円)", format="¥%d"),
-                "前回最安値": st.column_config.NumberColumn("ヤフオク最安(円)", format="¥%d", disabled=True),
-                "eBay相場(ドル)": st.column_config.NumberColumn("eBay相場(ドル入力)", format="$%.2f", min_value=0.0, step=10.0),
-                "状態": st.column_config.SelectboxColumn("ステータス", options=state_options),
-            },
-            width="stretch", hide_index=True, key="watch_editor"
-        )
+saved_w = edited_w_df[edited_w_df["削除"] == False].copy()
+saved_w = saved_w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]].reset_index(drop=True)
+if not st.session_state.w_df.reset_index(drop=True).equals(saved_w):
+saved_w.to_csv(WATCH_FILE, index=False)
+st.session_state.w_df = saved_w
+st.toast("💾 変更を自動保存しました！", icon="✅")
+st.rerun()
 
-        saved_w = edited_w_df[edited_w_df["削除"] == False].copy()
-        saved_w = saved_w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]].reset_index(drop=True)
-        if not st.session_state.w_df.reset_index(drop=True).equals(saved_w):
-            saved_w.to_csv(WATCH_FILE, index=False)
-            st.session_state.w_df = saved_w
-            st.toast("💾 変更を自動保存しました！", icon="✅")
-            st.rerun()
-
-        st.divider()
-        st.markdown("### 🚀 詳細データ ＆ 手動リンク")
-        for idx, row in st.session_state.w_df.iterrows():
-            kw = row["商品名"]
-            target = row["狙う仕入れ価格"]
-            status = row["状態"]
-            prev_min = row["前回最安値"]
-            ebay_usd = row.get("eBay相場(ドル)", 0.0)
+st.divider()
+st.markdown("### 🚀 詳細データ ＆ 手動リンク")
+for idx, row in st.session_state.w_df.iterrows():
+kw = row["商品名"]
+target = row["狙う仕入れ価格"]
+status = row["状態"]
+prev_min = row["前回最安値"]
+ebay_usd = row.get("eBay相場(ドル)", 0.0)
+           
+ebay_jpy = int(ebay_usd * current_rate)
             
-            ebay_jpy = int(ebay_usd * current_rate)
-            
-            # ① ヤフオクで拾った「実際の最安値」ベースの見込利益
-            if ebay_jpy > 0 and prev_min > 0:
-                est_profit_min = int((ebay_jpy * 0.85) - prev_min - 2000)
-                est_rate_min = (est_profit_min / ebay_jpy * 100) if ebay_jpy > 0 else 0
-                profit_text_min = f"¥{est_profit_min:,.0f} ({est_rate_min:.1f}%)"
-                color_min = "#1A7A42" if est_profit_min > 0 else "#C62828"
-            else:
-                profit_text_min = "巡回未実施" if ebay_jpy > 0 else "eBay相場未入力"
-                color_min = "#777777"
+# ① ヤフオクで拾った「実際の最安値」ベースの見込利益
+if ebay_jpy > 0 and prev_min > 0:
+est_profit_min = int((ebay_jpy * 0.85) - prev_min - 2000)
+est_rate_min = (est_profit_min / ebay_jpy * 100) if ebay_jpy > 0 else 0
+profit_text_min = f"¥{est_profit_min:,.0f} ({est_rate_min:.1f}%)"
+color_min = "#1A7A42" if est_profit_min > 0 else "#C62828"
+else:
+profit_text_min = "巡回未実施" if ebay_jpy > 0 else "eBay相場未入力"
+color_min = "#777777"
 
-            # ② 自分がエディタに入力した「狙う仕入れ価格（上限）」ベースの見込利益
-            if ebay_jpy > 0 and target > 0:
-                est_profit_tgt = int((ebay_jpy * 0.85) - target - 2000)
-                est_rate_tgt = (est_profit_tgt / ebay_jpy * 100) if ebay_jpy > 0 else 0
-                profit_text_tgt = f"¥{est_profit_tgt:,.0f} ({est_rate_tgt:.1f}%)"
-                color_tgt = "#1A7A42" if est_profit_tgt > 0 else "#C62828"
-            else:
-                profit_text_tgt = "狙い価格未入力" if ebay_jpy > 0 else "eBay相場未入力"
-                color_tgt = "#777777"
+# ② 自分がエディタに入力した「狙う仕入れ価格（上限）」ベースの見込利益
+if ebay_jpy > 0 and target > 0:
+est_profit_tgt = int((ebay_jpy * 0.85) - target - 2000)
+est_rate_tgt = (est_profit_tgt / ebay_jpy * 100) if ebay_jpy > 0 else 0
+profit_text_tgt = f"¥{est_profit_tgt:,.0f} ({est_rate_tgt:.1f}%)"
+color_tgt = "#1A7A42" if est_profit_tgt > 0 else "#C62828"
+else:
+profit_text_tgt = "狙い価格未入力" if ebay_jpy > 0 else "eBay相場未入力"
+color_tgt = "#777777"
                 
-            encoded_kw = urllib.parse.quote(kw)
-            price_param = f"&price_max={target}" if target > 0 else ""
+encoded_kw = urllib.parse.quote(kw)
+price_param = f"&price_max={target}" if target > 0 else ""
+           
+mercari_url = f"https://jp.mercari.com/search?keyword={encoded_kw}&status=on_sale&sort=created_time{price_param}"
+yahoo_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
+ebay_live_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_BIN=1&_sop=15"
+ebay_sold_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_Sold=1&LH_Complete=1"
             
-            mercari_url = f"https://jp.mercari.com/search?keyword={encoded_kw}&status=on_sale&sort=created_time{price_param}"
-            yahoo_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
-            ebay_live_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_BIN=1&_sop=15"
-            ebay_sold_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_Sold=1&LH_Complete=1"
-            
-            col_name, col_prices, col_m, col_y, col_el, col_es = st.columns([2.5, 3.5, 1.5, 1.5, 1.5, 1.5])
-            with col_name:
-                st.markdown(f"**{kw}**")
-                if status == "🔥 買い時アリ！": 
-                    st.markdown(f"<span style='color:#e32b2b; font-weight:bold; font-size:0.85rem;'>{status}</span>", unsafe_allow_html=True)
-                else: 
-                    st.markdown(f"`{status}`")
-                    
-            with col_prices:
-                st.markdown(f"""
-                <span style='font-size:0.82rem; color:#444;'>
-                🇯🇵 ヤフオク最安: <strong>¥{prev_min:,.0f}</strong> (狙い: ¥{target:,.0f})<br>
-                🇺🇸 eBay最安換算: <strong>¥{ebay_jpy:,.0f}</strong> (${ebay_usd:.2f})<br>
-                💰 現最安値での利益: <strong style='color:{color_min};'>{profit_text_min}</strong><br>
-                🎯 狙い価格での利益: <strong style='color:{color_tgt};'>{profit_text_tgt}</strong>
-                </span>
-                """, unsafe_allow_html=True)
+col_name, col_prices, col_m, col_y, col_el, col_es = st.columns([2.5, 3.5, 1.5, 1.5, 1.5, 1.5])
+with col_name:
+st.markdown(f"**{kw}**")
+if status == "🔥 買い時アリ！": 
+st.markdown(f"<span style='color:#e32b2b; font-weight:bold; font-size:0.85rem;'>{status}</span>", unsafe_allow_html=True)
+else: 
+st.markdown(f"`{status}`")
+                   
+with col_prices:
+st.markdown(f"""
+<span style='font-size:0.82rem; color:#444;'>
+🇯🇵 ヤフオク最安: <strong>¥{prev_min:,.0f}</strong> (狙い: ¥{target:,.0f})<br>
+🇺🇸 eBay最安換算: <strong>¥{ebay_jpy:,.0f}</strong> (${ebay_usd:.2f})<br>
+💰 現最安値での利益: <strong style='color:{color_min};'>{profit_text_min}</strong><br>
+🎯 狙い価格での利益: <strong style='color:{color_tgt};'>{profit_text_tgt}</strong>
+</span>
+""", unsafe_allow_html=True)
                 
-            with col_m:
-                st.markdown(f'<a href="{mercari_url}" target="_blank" style="display:block; text-align:center; background:#e32b2b; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🔴 メルカリ ↗</a>', unsafe_allow_html=True)
-            with col_y:
-                st.markdown(f'<a href="{yahoo_url}" target="_blank" style="display:block; text-align:center; background:#ffaa00; color:#1a1a1a; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🟡 ヤフオク ↗</a>', unsafe_allow_html=True)
-            with col_el:
-                st.markdown(f'<a href="{ebay_live_url}" target="_blank" style="display:block; text-align:center; background:#0064d2; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🔵 eBay最安 ↗</a>', unsafe_allow_html=True)
-            with col_es:
-                st.markdown(f'<a href="{ebay_sold_url}" target="_blank" style="display:block; text-align:center; background:#2d7a4f; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🟢 eBay売切 ↗</a>', unsafe_allow_html=True)
-            st.write("")
-    else:
-        st.warning("現在、監視リストに登録されているキーワードはありません。") 
-
+with col_m:
+st.markdown(f'<a href="{mercari_url}" target="_blank" style="display:block; text-align:center; background:#e32b2b; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🔴 メルカリ ↗</a>', unsafe_allow_html=True)
+with col_y:
+st.markdown(f'<a href="{yahoo_url}" target="_blank" style="display:block; text-align:center; background:#ffaa00; color:#1a1a1a; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🟡 ヤフオク ↗</a>', unsafe_allow_html=True)
+with col_el:
+st.markdown(f'<a href="{ebay_live_url}" target="_blank" style="display:block; text-align:center; background:#0064d2; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🔵 eBay最安 ↗</a>', unsafe_allow_html=True)
+with col_es:
+st.markdown(f'<a href="{ebay_sold_url}" target="_blank" style="display:block; text-align:center; background:#2d7a4f; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🟢 eBay売切 ↗</a>', unsafe_allow_html=True)
+st.write("")
+else:
+st.warning("現在、監視リストに登録されているキーワードはありません。") 
 st.write("システム稼働中")
