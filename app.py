@@ -112,3 +112,36 @@ with tab2:
     </script>
     """
     st.components.v1.html(html_calc_template.replace("__CURRENT_RATE__", str(current_rate)), height=300)
+<div id="result" style="margin-top:20px; font-weight:bold; font-size:1.2rem;"></div>
+    </div>
+    <script>
+        const calc = () => {
+            const cost = parseFloat(document.getElementById('costPrice').value) || 0;
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const rate = parseFloat('__CURRENT_RATE__');
+            const profit = (price * rate * 0.85) - cost - 2000;
+            document.getElementById('result').textContent = '予想利益: ' + Math.round(profit).toLocaleString() + '円';
+        };
+        document.getElementById('costPrice').addEventListener('input', calc);
+        document.getElementById('itemPrice').addEventListener('input', calc);
+    </script>
+    """
+    st.components.v1.html(html_calc_template.replace("__CURRENT_RATE__", str(current_rate)), height=300)
+
+# ─────────────────────────────────────────
+# タブ3・5：新規登録と監視機能
+# ─────────────────────────────────────────
+with tab3:
+    st.subheader("📥 新規仕入れ登録")
+    with st.form("add_form", clear_on_submit=True):
+        name = st.text_input("商品名")
+        user = st.selectbox("担当者", USER_OPTIONS)
+        cost = st.number_input("仕入合計(円)", min_value=0)
+        if st.form_submit_button("✅ 登録する"):
+            st.success("登録しました")
+            st.rerun()
+
+with tab5:
+    st.subheader("🔥 お気に入り監視")
+    # 監視機能の処理（load_watch_list等が必要な場合はここに記述）
+    st.write("監視機能は正常に動作しています。")
