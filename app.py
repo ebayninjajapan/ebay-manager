@@ -99,3 +99,30 @@ with st.expander("🔥 監視リスト"):
         st.session_state.w_df.to_csv(WATCH_FILE, index=False)
         st.rerun()
     st.dataframe(st.session_state.w_df)
+
+# ─────────────────────────────────────────
+# タブ2：利益計算ツール（HTML/JS）
+# ─────────────────────────────────────────
+with tab2:
+    st.subheader("🔍 eBay利益計算・ハイブリッドツール")
+    html_calc_template = """
+    <div id="calc-app">
+        <input type="text" id="jaInput" placeholder="日本語商品名" style="width:100%; margin-bottom:10px;">
+        <input type="text" id="enInput" placeholder="英語商品名" style="width:100%; margin-bottom:10px;">
+        <input type="number" id="costPrice" placeholder="仕入れ価格(円)" style="width:100%; margin-bottom:10px;">
+        <input type="number" id="itemPrice" placeholder="eBay価格(ドル)" style="width:100%;">
+        <div id="result" style="margin-top:20px; font-weight:bold; font-size:1.2rem;"></div>
+    </div>
+    <script>
+        const calc = () => {
+            const cost = parseFloat(document.getElementById('costPrice').value) || 0;
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const rate = __CURRENT_RATE__;
+            const profit = (price * rate * 0.85) - cost - 2000;
+            document.getElementById('result').textContent = '予想利益: ' + Math.round(profit).toLocaleString() + '円';
+        };
+        document.getElementById('costPrice').addEventListener('input', calc);
+        document.getElementById('itemPrice').addEventListener('input', calc);
+    </script>
+    """
+    st.components.v1.html(html_calc_template.replace("__CURRENT_RATE__", str(current_rate)), height=300)
