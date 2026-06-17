@@ -620,5 +620,5 @@ with col_es:
 st.markdown(f'<a href="{ebay_sold_url}" target="_blank" style="display:block; text-align:center; background:#2d7a4f; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:bold;">🟢 eBay売切 ↗</a>', unsafe_allow_html=True)
 st.write("")
 else:
-st.warning("現在、監視リストに登録されているキーワードはありません。") 
+st.warning("現在、監視リストに登録されているキーワードはありません。")
 st.write("システム稼働中")
