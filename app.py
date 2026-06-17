@@ -54,7 +54,9 @@ st.write(f"💱 現在のレート: 1 USD = {current_rate:.2f} JPY")
 # ─────────────────────────────────────────
 df = load_data()
 
-tab1, tab2 = st.tabs(["📋 在庫管理表", "その他"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📋 在庫管理表", "🔍 利益計算ツール", "📥 新規仕入れ登録", "💾 データDL", "🔥 お気に入り監視"
+])
 
 with tab1:
     st.subheader("📋 在庫管理表")
