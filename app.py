@@ -72,3 +72,47 @@ SIZE_COSTS = {"大(カメラなど)": 5000, "中(カメラなど)": 3000, "小":
 STATUS_OPTIONS = ["掲載前", "掲載中", "販売済み", "発送済"]
 SIZE_OPTIONS = ["大(カメラなど)", "中(カメラなど)", "小", "極小"]
 USER_OPTIONS = ["自分", "悠太郎", "その他"]
+# ─────────────────────────────────────────
+# データ前処理と計算
+# ─────────────────────────────────────────
+df = load_data()
+df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
+df["使用レート"] = df["確定レート"].replace(0, current_rate)
+
+# 純利益の計算
+df["純利益(円)"] = (
+    df["eBay相場(ドル)"] * 0.85 * df["使用レート"]
+    - df["仕入(円)"]
+    - df["発送サイズ"].map(SIZE_COSTS).fillna(2000)
+).astype(int)
+
+# 売上換算の計算
+df["売上換算(円)"] = (df["売値(ドル)"] * df["使用レート"]).astype(int)
+
+# 今月の集計データ
+now_month = datetime.now().month
+this_month = df[df["日付"].dt.month == now_month]
+sold = this_month[this_month["ステータス"].isin(["販売済み", "発送済"])]
+
+# お気に入り監視リストの初期化
+if "w_df" not in st.session_state:
+    st.session_state.w_df = load_watch_list()
+
+# ─────────────────────────────────────────
+# ダッシュボード
+# ─────────────────────────────────────────
+st.subheader("📈 今月の実績")
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("今月 仕入れ合計", f"¥{this_month['仕入(円)'].sum():,.0f}")
+m2.metric("今月 売上合計", f"¥{sold['売値(ドル)'].sum() * current_rate:,.0f}")
+m3.metric("今月 確定利益", f"¥{sold['純利益(円)'].sum():,.0f}")
+m4.metric("在庫件数（掲載中）", len(df[df["ステータス"] == "掲載中"]))
+
+st.divider()
+
+# ─────────────────────────────────────────
+# タブの定義
+# ─────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📋 在庫管理表", "🔍 利益計算ツール", "📥 新規仕入れ登録", "💾 データDL", "🔥 お気に入り監視"
+])
