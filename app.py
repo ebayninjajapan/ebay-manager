@@ -583,23 +583,23 @@ color_tgt = "#1A7A42" if est_profit_tgt > 0 else "#C62828"
 else:
 profit_text_tgt = "狙い価格未入力" if ebay_jpy > 0 else "eBay相場未入力"
 color_tgt = "#777777"
-                
+
 encoded_kw = urllib.parse.quote(kw)
 price_param = f"&price_max={target}" if target > 0 else ""
-           
+
 mercari_url = f"https://jp.mercari.com/search?keyword={encoded_kw}&status=on_sale&sort=created_time{price_param}"
 yahoo_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
 ebay_live_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_BIN=1&_sop=15"
 ebay_sold_url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_kw}&LH_Sold=1&LH_Complete=1"
-            
+
 col_name, col_prices, col_m, col_y, col_el, col_es = st.columns([2.5, 3.5, 1.5, 1.5, 1.5, 1.5])
 with col_name:
 st.markdown(f"**{kw}**")
-if status == "🔥 買い時アリ！": 
+if status == "🔥 買い時アリ！":
 st.markdown(f"<span style='color:#e32b2b; font-weight:bold; font-size:0.85rem;'>{status}</span>", unsafe_allow_html=True)
-else: 
+else:
 st.markdown(f"`{status}`")
-                   
+
 with col_prices:
 st.markdown(f"""
 <span style='font-size:0.82rem; color:#444;'>
