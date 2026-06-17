@@ -13,87 +13,73 @@ st.set_page_config(layout="wide", page_title="eBay 仕入れ管理", page_icon="
 DB_FILE = "l_database.csv"
 WATCH_FILE = "watch_list.csv"
 
-# ─────────────────────────────────────────
 # データ取得・ロード
-# ─────────────────────────────────────────
 @st.cache_data(ttl=300)
 def get_rate():
-    try:
-        return float(requests.get("https://open.er-api.com/v6/latest/USD", timeout=3).json()["rates"]["JPY"])
-    except:
-        return 155.0
+    try:
+        return float(requests.get("https://open.er-api.com/v6/latest/USD", timeout=3).json()["rates"]["JPY"])
+    except:
+        return 155.0
 
 def load_data():
-    if os.path.exists(DB_FILE):
-        df = pd.read_csv(DB_FILE)
-        for col in ["ID", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "確定レート"]:
-            if col not in df.columns:
-                df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
-        if "メモ" not in df.columns:
-            df["メモ"] = ""
-        df["ID"] = df["ID"].astype(int)
-        return df
-    return pd.DataFrame(columns=[
-        "ID", "日付", "担当者", "商品名", "仕入(円)",
-        "eBay相場(ドル)", "売値(ドル)", "ステータス",
-        "発送サイズ", "確定レート", "メモ"
-    ])
+    if os.path.exists(DB_FILE):
+        df = pd.read_csv(DB_FILE)
+        for col in ["ID", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "確定レート"]:
+            if col not in df.columns:
+                df[col] = 0.0
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+        if "メモ" not in df.columns:
+            df["メモ"] = ""
+        df["ID"] = df["ID"].astype(int)
+        return df
+    return pd.DataFrame(columns=[
+        "ID", "日付", "担当者", "商品名", "仕入(円)",
+        "eBay相場(ドル)", "売値(ドル)", "ステータス",
+        "発送サイズ", "確定レート", "メモ"
+    ])
 
 def load_watch_list():
-    if os.path.exists(WATCH_FILE):
-        try:
-            w = pd.read_csv(WATCH_FILE)
-            # 列名の重複防止・リネーム処理
-            if "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" not in w.columns:
-                w = w.rename(columns={"eBay最安値(ドル)": "eBay相場(ドル)"})
-            elif "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" in w.columns:
-                w = w.drop(columns=["eBay最安値(ドル)"])
-                
-            # 必要な列が確実に1つずつ存在するように調整
-            for col in ["狙う仕入れ価格", "前回最安値", "eBay相場(ドル)"]:
-                if col not in w.columns:
-                    w[col] = 0.0
-                w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
-            if "状態" not in w.columns:
-                w["状態"] = "🆕 未チェック"
-            
-            # 重複列を完全に排除して必要な列のみを抽出
-            w = w.loc[:, ~w.columns.duplicated()]
-            return w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]]
-        except:
-            pass
-    return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"])
-
+    if os.path.exists(WATCH_FILE):
+        try:
+            w = pd.read_csv(WATCH_FILE)
+            if "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" not in w.columns:
+                w = w.rename(columns={"eBay最安値(ドル)": "eBay相場(ドル)"})
+            elif "eBay最安値(ドル)" in w.columns and "eBay相場(ドル)" in w.columns:
+                w = w.drop(columns=["eBay最安値(ドル)"])
+            for col in ["狙う仕入れ価格", "前回最安値", "eBay相場(ドル)"]:
+                if col not in w.columns:
+                    w[col] = 0.0
+                w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
+            if "状態" not in w.columns:
+                w["状態"] = "🆕 未チェック"
+            w = w.loc[:, ~w.columns.duplicated()]
+            return w[["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"]]
+        except:
+            pass
+    return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"])
 
 def check_yahoo_auctions_html(keyword):
-    encoded_kw = urllib.parse.quote(keyword)
-    search_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_all=1&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
-    }
-    
-    try:
-        response = requests.get(search_url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            price_elements = soup.find_all(class_=re.compile("Product__priceValue"))
-            
-            prices = []
-            for elem in price_elements:
-                text = elem.get_text()
-                clean_text = text.replace(',', '').replace('円', '').strip()
-                nums = [int(s) for s in re.findall(r'\d+', clean_text)]
-                for num in nums:
-                    if num >= 100:
-                        prices.append(num)
-            if prices:
-                return min(prices)
-    except:
-        pass
-    return None
+    encoded_kw = urllib.parse.quote(keyword)
+    search_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_all=1&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+    try:
+        response = requests.get(search_url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            price_elements = soup.find_all(class_=re.compile("Product__priceValue"))
+            prices = []
+            for elem in price_elements:
+                text = elem.get_text()
+                clean_text = text.replace(',', '').replace('円', '').strip()
+                nums = [int(s) for s in re.findall(r'\d+', clean_text)]
+                for num in nums:
+                    if num >= 100:
+                        prices.append(num)
+            if prices:
+                return min(prices)
+    except:
+        pass
+    return None
 
 # ─────────────────────────────────────────
 # 定数
