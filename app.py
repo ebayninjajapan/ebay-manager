@@ -188,9 +188,9 @@ st.markdown("""
 
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
-    st.markdown('<p class="main-header">📦 eBay 仕入れ・利益管理システム</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">📦 eBay 仕入れ・利益管理システム</p>', unsafe_allow_html=True)
 with col_h2:
-    st.markdown(f'<p style="text-align:right;padding-top:12px"><span class="rate-badge">💱 1 USD = {current_rate:.2f} JPY</span></p>', unsafe_allow_html=True)
+st.markdown(f'<p style="text-align:right;padding-top:12px"><span class="rate-badge">💱 1 USD = {current_rate:.2f} JPY</span></p>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────
 # データ前処理と計算
