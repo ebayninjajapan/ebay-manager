@@ -561,9 +561,9 @@ target = row["狙う仕入れ価格"]
 status = row["状態"]
 prev_min = row["前回最安値"]
 ebay_usd = row.get("eBay相場(ドル)", 0.0)
-           
+
 ebay_jpy = int(ebay_usd * current_rate)
-            
+
 # ① ヤフオクで拾った「実際の最安値」ベースの見込利益
 if ebay_jpy > 0 and prev_min > 0:
 est_profit_min = int((ebay_jpy * 0.85) - prev_min - 2000)
