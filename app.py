@@ -201,9 +201,9 @@ df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
 df["使用レート"] = df["確定レート"].replace(0, current_rate)
 
 df["純利益(円)"] = (
-    df["eBay相場(ドル)"] * 0.85 * df["使用レート"]
-    - df["仕入(円)"]
-    - df["発送サイズ"].map(SIZE_COSTS).fillna(2000)
+df["eBay相場(ドル)"] * 0.85 * df["使用レート"]
+- df["仕入(円)"]
+- df["発送サイズ"].map(SIZE_COSTS).fillna(2000)
 ).astype(int)
 df["売上換算(円)"] = (df["売値(ドル)"] * df["使用レート"]).astype(int)
 
