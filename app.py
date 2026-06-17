@@ -64,3 +64,38 @@ with tab1:
         st.rerun()
 
 st.write("システム稼働中")
+
+# 監視機能の関数を追記
+def load_watch_list():
+    if os.path.exists(WATCH_FILE):
+        try:
+            w = pd.read_csv(WATCH_FILE)
+            for col in ["狙う仕入れ価格", "前回最安値", "eBay相場(ドル)"]:
+                if col not in w.columns: w[col] = 0.0
+                w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
+            return w
+        except: pass
+    return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安値", "eBay相場(ドル)", "状態"])
+
+def check_yahoo_auctions_html(keyword):
+    encoded_kw = urllib.parse.quote(keyword)
+    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_all=1&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        res = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        prices = [int(s) for s in re.findall(r'\d+', soup.get_text().replace(',', '')) if int(s) >= 100]
+        return min(prices) if prices else None
+    except: return None
+
+# タブに監視機能を追加
+if "w_df" not in st.session_state: st.session_state.w_df = load_watch_list()
+
+with st.expander("🔥 監視リスト"):
+    if st.button("🔄 自動巡回"):
+        for i, row in st.session_state.w_df.iterrows():
+            p = check_yahoo_auctions_html(row["商品名"])
+            if p: st.session_state.w_df.at[i, "前回最安値"] = p
+        st.session_state.w_df.to_csv(WATCH_FILE, index=False)
+        st.rerun()
+    st.dataframe(st.session_state.w_df)
