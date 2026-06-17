@@ -125,58 +125,84 @@ df_show["日付"] = df_show["日付"].dt.strftime("%Y-%m-%d")
 
 df_show.insert(0, "削除", False)
 base_columns = ["ID", "日付", "担当者", "商品名", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "ステータス", "発送サイズ", "確定レート", "メモ"]
-
-edited_df = st.data_editor(
-df_show,
-column_config={
-"削除": st.column_config.CheckboxColumn("削除", width="small"),
-"ID": st.column_config.NumberColumn("ID", disabled=True, format="%d"),
-"ステータス": st.column_config.SelectboxColumn(options=STATUS_OPTIONS, required=True),
-"発送サイズ": st.column_config.SelectboxColumn(options=SIZE_OPTIONS),
-"担当者": st.column_config.SelectboxColumn(options=USER_OPTIONS),
-},
-width="stretch", hide_index=True, num_rows="dynamic", key="main_editor"
-)
-
-if st.button("💾 変更を保存", type="primary"):
-saved_edited = edited_df[edited_df["削除"] == False].copy()
-new_rows_list = []
-updated_ids = set()
-
-for _, row in saved_edited.iterrows():
-pid = row.get("ID", 0)
-if pd.isna(pid) or pid == 0 or int(pid) not in df["ID"].values:
-next_id = int(df["ID"].max() + 1) if not df.empty else 1
-while next_id in updated_ids: next_id += 1
-row["ID"] = next_id
-row["日付"] = datetime.now().strftime("%Y-%m-%d") if pd.isna(row.get("日付")) else row["日付"]
-new_dict = {col: row.get(col, "") for col in base_columns}
-if new_dict["ステータス"] in ["販売済み", "発送済"] and (pd.isna(new_dict["確定レート"]) or new_dict["確定レート"] == 0):
-new_dict["確定レート"] = current_rate
-new_rows_list.append(new_dict)
-updated_ids.add(next_id)
-else:
-pid = int(pid)
-updated_ids.add(pid)
-if row["ステータス"] in ["販売済み", "発送済"] and row["確定レート"] == 0:
-row["確定レート"] = current_rate
-for col in base_columns:
-if col in row: df.loc[df["ID"] == pid, col] = row[col]
-
-visible_ids = set(df_show["ID"].dropna().astype(int).values)
-deleted_ids = visible_ids - updated_ids
-if deleted_ids: df = df[~df["ID"].isin(deleted_ids)]
-# 新規行の追加処理（new_rows_list がある場合）
-        if new_rows_list:
-            df = pd.concat([df, pd.DataFrame(new_rows_list)], ignore_index=True)
-        
-        # 最終的な保存
-        df.to_csv(DB_FILE, index=False)
-        st.success("保存しました！")
-        st.rerun()
-$('lEbaySold').href='https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(currentEn)+'&LH_Sold=1&LH_Complete=1'; $('lEbaySold').classList.remove('off');
-    } else { $('lEbay').classList.add('off'); $('lEbaySold').classList.add('off'); }
-  }
+# 128行目付近から、このブロックで完全に置き換えてください
+    html_calc_template = """
+    <div class="split-grid">
+      <div class="sec split-col" style="border-top:4px solid #e32b2b;">
+        <div class="mb"><label class="lbl">🇯🇵 日本語の商品名を入力</label><input id="jaInput" type="text" placeholder="例：デジモン ぬいぐるみ"></div>
+        <div class="mb">
+          <label class="lbl">🇺🇸 自動英語訳</label>
+          <div class="trans-box">
+            <div class="trans" id="jaToEnResult">英語に翻訳されます</div>
+            <a href="#" id="gTransJa" class="btn-gtrans" target="_blank">G翻訳↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="sec split-col" style="border-top:4px solid #0064d2;">
+        <div class="mb"><label class="lbl">🇺🇸 英語の商品名・型番を入力</label><input id="enInput" type="text" placeholder="例：Nikon F3 Camera"></div>
+        <div class="mb">
+          <label class="lbl">🇯🇵 自動日本語訳</label>
+          <div class="trans-box">
+            <div class="trans" id="enToJaResult">日本語に翻訳されます</div>
+            <a href="#" id="gTransEn" class="btn-gtrans" target="_blank">G翻訳↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec" style="background:#f9fbf9;">
+      <div class="links-title" style="margin-top:0;">🇯🇵 国内仕入れ元を検索</div>
+      <div class="links-row">
+        <a href="#" class="btn-search mercari off" id="lMercari" target="_blank">🔴 メルカリ</a>
+        <a href="#" class="btn-search yahoo off" id="lYahoo" target="_blank">🟡 ヤフオク</a>
+      </div>
+      <div class="links-title">🇺🇸 海外eBay相場を検索</div>
+      <div class="links-row">
+        <a href="#" class="btn-search ebay-live off" id="lEbay" target="_blank">🔵 eBay (販売中)</a>
+        <a href="#" class="btn-search ebay-sold off" id="lEbaySold" target="_blank">🟢 eBay (Sold)</a>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="mb"><label class="lbl">為替レート</label><input id="exchangeRate" type="text" value="__CURRENT_RATE__"></div>
+      <div class="mb"><label class="lbl">仕入れ価格(円)</label><input id="costPrice" type="text" value="0"></div>
+      <div class="mb"><label class="lbl">eBay 販売価格(ドル)</label><input id="itemPrice" type="text" value="0"></div>
+    </div>
+    <div class="panel">
+      <div class="profits">
+        <div class="pcol"><div class="lbl">最終利益</div><div class="val pos" id="pProfit">0円</div><div id="pRate">利益率 0%</div></div>
+      </div>
+      <div class="summary"><span>売上: <strong id="pRevenue">0円</strong></span><span>経費: <strong id="pExpense">0円</strong></span></div>
+    </div>
+    <script>
+    (function(){
+      const $=id=>document.getElementById(id);
+      const num=id=>parseFloat(($(id).value||'').replace(/,/g,''))||0;
+      let currentJa = ''; let currentEn = '';
+      function updateButtons() {
+        if(currentJa) {
+          $('lMercari').href='https://jp.mercari.com/search?keyword='+encodeURIComponent(currentJa); $('lMercari').classList.remove('off');
+          $('lYahoo').href='https://auctions.yahoo.co.jp/search/search?p='+encodeURIComponent(currentJa); $('lYahoo').classList.remove('off');
+        } else { $('lMercari').classList.add('off'); $('lYahoo').classList.add('off'); }
+        if(currentEn) {
+          $('lEbay').href='https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(currentEn); $('lEbay').classList.remove('off');
+          $('lEbaySold').href='https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(currentEn)+'&LH_Sold=1&LH_Complete=1'; $('lEbaySold').classList.remove('off');
+        } else { $('lEbay').classList.add('off'); $('lEbaySold').classList.add('off'); }
+      }
+      function calc() {
+        const rate = num('exchangeRate'); const cost = num('costPrice'); const price = num('itemPrice');
+        const revenue = price * rate;
+        const expense = cost + (revenue * 0.15) + 2000;
+        const profit = revenue - expense;
+        $('pProfit').textContent = Math.round(profit).toLocaleString() + '円';
+        $('pProfit').className = 'val ' + (profit >= 0 ? 'pos' : 'neg');
+        $('pRevenue').textContent = Math.round(revenue).toLocaleString() + '円';
+        $('pExpense').textContent = Math.round(expense).toLocaleString() + '円';
+      }
+      $('jaInput').oninput = (e) => { currentJa = e.target.value; updateButtons(); };
+      $('enInput').oninput = (e) => { currentEn = e.target.value; updateButtons(); };
+      ['exchangeRate', 'costPrice', 'itemPrice'].forEach(id => $(id).oninput = calc);
+    })();
+    </script>
+    """ #
 
   function calc() {
     const rate = num('exchangeRate'); const cost = num('costPrice'); const price = num('itemPrice');
