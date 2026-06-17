@@ -97,11 +97,11 @@ def get_rate():
                     if col not in df.columns:
                         df[col] = 0.0
                         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
-        if "メモ" not in df.columns:
-            df["メモ"] = ""
-        df["ID"] = df["ID"].astype(int)
-        return df
-    return pd.DataFrame(columns=[
+                        if "メモ" not in df.columns:
+                            df["メモ"] = ""
+                            df["ID"] = df["ID"].astype(int)
+return df
+return pd.DataFrame(columns=[
         "ID", "日付", "担当者", "商品名", "仕入(円)",
         "eBay相場(ドル)", "売値(ドル)", "ステータス",
         "発送サイズ", "確定レート", "メモ"
