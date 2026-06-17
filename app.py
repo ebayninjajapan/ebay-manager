@@ -134,33 +134,33 @@ return pd.DataFrame(columns=["商品名", "狙う仕入れ価格", "前回最安
 
 
 def check_yahoo_auctions_html(keyword):
-    encoded_kw = urllib.parse.quote(keyword)
-    search_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_all=1&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
-    }
-    
-    try:
-        response = requests.get(search_url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            price_elements = soup.find_all(class_=re.compile("Product__priceValue"))
-            
-            prices = []
-            for elem in price_elements:
-                text = elem.get_text()
-                clean_text = text.replace(',', '').replace('円', '').strip()
-                nums = [int(s) for s in re.findall(r'\d+', clean_text)]
-                for num in nums:
-                    if num >= 100:
-                        prices.append(num)
-            if prices:
-                return min(prices)
-    except:
-        pass
-    return None
+encoded_kw = urllib.parse.quote(keyword)
+search_url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_all=1&exflg=1&b=1&n=50&s1=cbids&o1=a&wrmode=2"
+
+headers = {
+"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+"Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
+}
+
+try:
+response = requests.get(search_url, headers=headers, timeout=10)
+if response.status_code == 200:
+soup = BeautifulSoup(response.text, 'html.parser')
+price_elements = soup.find_all(class_=re.compile("Product__priceValue"))
+
+prices = []
+for elem in price_elements:
+text = elem.get_text()
+clean_text = text.replace(',', '').replace('円', '').strip()
+nums = [int(s) for s in re.findall(r'\d+', clean_text)]
+for num in nums:
+if num >= 100:
+prices.append(num)
+if prices:
+return min(prices)
+except:
+pass
+return None
 
 # ─────────────────────────────────────────
 # 定数
