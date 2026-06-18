@@ -76,7 +76,6 @@ with tab2:
     <html lang="ja">
     <head><meta charset="UTF-8">
     <style>
-        /* ここにあなたが送ってくれたCSSを貼り付け */
         :root{--bg:#fff;--card:#fff;--border:rgba(26,59,40,.09);--text:#1a1a1a;--sub:#5a6b5e;--dim:#9ca89e;--accent:#B79740;--teal:#1A5C3A;--teal2:#2D7A4F;--pp:#1A7A42;--pn:#C62828;--ibg:#F5F7F5;--iborder:rgba(26,59,40,.15);--r:14px;--rs:8px;}
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);padding:10px 12px 280px;}
