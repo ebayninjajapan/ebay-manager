@@ -84,4 +84,3 @@ with tab4:
     st.download_button("CSV DL", df.to_csv(index=False).encode('utf-8-sig'), "data.csv")
 
 with tab5:
-    # 監視リストの長いロジック
