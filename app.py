@@ -13,13 +13,15 @@ import streamlit.components.v1 as components
 st.set_page_config(layout="wide", page_title="eBay 仕入れ管理", page_icon="📦")
 DB_FILE = "l_database.csv"
 WATCH_FILE = "watch_list.csv"
+
+# --- 定数定義 ---
 SIZE_COSTS = {"大(カメラなど)": 5000, "中(カメラなど)": 3000, "小": 1500, "極小": 800}
 STATUS_OPTIONS = ["掲載前", "掲載中", "販売済み", "発送済"]
 SIZE_OPTIONS = ["大(カメラなど)", "中(カメラなど)", "小", "極小"]
 USER_OPTIONS = ["自分", "悠太郎", "その他"]
 base_columns = ["ID", "日付", "担当者", "商品名", "仕入(円)", "eBay相場(ドル)", "売値(ドル)", "ステータス", "発送サイズ", "確定レート", "メモ"]
 
-# --- 関数群 ---
+# --- 関数 ---
 @st.cache_data(ttl=300)
 def get_rate():
     try: return float(requests.get("https://open.er-api.com/v6/latest/USD", timeout=3).json()["rates"]["JPY"])
@@ -58,24 +60,29 @@ st.title("📦 eBay 仕入れ管理システム")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 在庫", "🔍 計算", "📥 登録", "💾 DL", "🔥 監視"])
 
 with tab1:
-    edited = st.data_editor(df, num_rows="dynamic", key="main_editor")
-    if st.button("💾 保存"):
-        edited.to_csv(DB_FILE, index=False)
+    # 既存の在庫管理表ロジック
+    df_show = df.copy()
+    edited_df = st.data_editor(df_show, num_rows="dynamic", key="main_editor")
+    if st.button("💾 変更を保存"):
+        edited_df.to_csv(DB_FILE, index=False)
         st.rerun()
 
 with tab2:
-    # ここに送っていただいた利益計算ツールのHTMLを貼ってください
-    st.info("HTMLコードをここに入れてください")
+    # 利益計算HTML埋め込み
+    html_template = """...ここに前回送ってもらったHTMLを貼り付け..."""
+    components.html(html_template.replace("__CURRENT_RATE__", f"{current_rate:.2f}"), height=700)
 
 with tab3:
+    # 新規登録ロジック
     with st.form("add_form", clear_on_submit=True):
         name = st.text_input("商品名")
         if st.form_submit_button("登録"):
-            st.success("登録完了")
+            # ここに登録ロジック
+            st.rerun()
 
 with tab4:
-    st.download_button("DL", df.to_csv(index=False).encode('utf-8-sig'), "data.csv")
+    st.download_button("CSV DL", df.to_csv(index=False).encode('utf-8-sig'), "data.csv")
 
 with tab5:
-    # ここに送っていただいた監視リストのロジックを貼ってください
-    st.info("監視リストのロジックをここに入れてください")
+    # 監視リストの長いロジック
+    # ここに監視リストの全コードを貼り付け
